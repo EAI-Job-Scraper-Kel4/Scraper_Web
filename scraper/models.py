@@ -7,7 +7,6 @@ class Job(models.Model):
     company = models.CharField(max_length=255)
     source = models.CharField(max_length=255)
     job_link = models.URLField(unique=True)
-    relative_time = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return self.title

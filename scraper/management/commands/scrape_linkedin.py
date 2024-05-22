@@ -6,10 +6,11 @@ from selenium.webdriver.chrome.options import Options
 from django.core.management.base import BaseCommand
 from scraper.models import Job
 from bs4 import BeautifulSoup
-from datetime import datetime
+from datetime import datetime, timedelta
 import time
 import os
 import chromedriver_autoinstaller
+
 
 class Command(BaseCommand):
     help = 'Scrape job listings from LinkedIn'
@@ -27,8 +28,33 @@ class Command(BaseCommand):
 
         driver = webdriver.Chrome(options=chrome_options)
 
-        job_types = ['programmer', 'data', 'network', 'cyber security']
+        job_types = [
+            'programmer', 'data', 'network', 'cyber security',
+            'software developer', 'data scientist', 'data analyst', 'data engineer',
+            'system administrator', 'network engineer', 'cybersecurity analyst',
+            'full stack developer', 'backend developer', 'frontend developer',
+            'machine learning engineer', 'IT support', 'cloud engineer',
+            'devops engineer', 'database administrator', 'AI engineer', 'QA engineer',
+            'IT consultant', 'IT project manager', 'IT business analyst',
+            'IT security specialist', 'IT auditor', 'IT compliance officer', 'back end', 'front end',
+            'web developer', 'mobile developer', 'mobile app developer', 'android developer', 'ios developer',
+            'game developer', 'game programmer', 'full stack', 'fullstack', 'penetration tester',
+            'ethical hacker', 'security consultant', 'security analyst', 'security engineer', 'security architect',
+            'security specialist', 'security administrator', 'security auditor', 'security compliance officer',
+            'network security engineer', 'network administrator', 'data architect', 'big data engineer',
+            'data warehouse developer', 'embedded systems engineer', 'firmware engineer', 'iot developer',
+            'it operations manager', 'site reliability engineer', 'systems engineer', 'blockchain developer',
+            'ai research scientist', 'robotics engineer', 'security operations center analyst',
+            'threat intelligence analyst',
+            'digital forensics analyst', 'identity and access management specialist', 'it risk manager',
+            'vulnerability analyst'
+        ]
+
         all_jobs = []
+        job_counts = {job_type: 0 for job_type in job_types}  # Dictionary to count valid jobs for each job type
+
+        # Ambil semua kombinasi yang ada di database
+        existing_combinations = set(Job.objects.values_list('title', 'publication_date', 'location', 'company'))
 
         for job_type in job_types:
             self.stdout.write(self.style.SUCCESS(f'Scraping jobs for: {job_type}'))
@@ -52,21 +78,22 @@ class Command(BaseCommand):
                     break
 
                 jobs = job_listings.find_all('li')
+
                 for job in jobs:
                     title = job.find('h3', class_="base-search-card__title")
-                    date = job.find('time')
+                    date_element = job.find('time')
                     location = job.find('span', class_="job-search-card__location")
                     company = job.find('h4', class_="base-search-card__subtitle")
                     link = job.find("a", class_="base-card__full-link")
 
-                    if title and date and location and company and link:
-                        date_text = date.get('datetime')
+                    if title and date_element and location and company and link:
+                        date_text = date_element.get('datetime')
                         try:
                             # Attempt to parse full datetime format
-                            publication_date = datetime.strptime(date_text, '%Y-%m-%dT%H:%M:%S.%fZ')
+                            publication_date = datetime.strptime(date_text, '%Y-%m-%dT%H:%M:%S.%fZ').date()
                         except ValueError:
                             # Fallback to date-only format
-                            publication_date = datetime.strptime(date_text, '%Y-%m-%d')
+                            publication_date = datetime.strptime(date_text, '%Y-%m-%d').date()
 
                         job_data = {
                             'title': title.text.strip(),
@@ -76,7 +103,25 @@ class Command(BaseCommand):
                             'source': 'LinkedIn',
                             'job_link': link.get('href')
                         }
-                        all_jobs.append(job_data)
+
+                        combination = (job_data['title'], job_data['publication_date'], job_data['location'], job_data['company'])
+
+                        # Validasi apakah tanggal publikasi masih dalam 2 bulan terakhir
+                        if publication_date >= datetime.now().date() - timedelta(days=60):
+                            # Periksa apakah kombinasi sudah ada di database
+                            if combination not in existing_combinations:
+                                all_jobs.append(job_data)
+                                job_counts[job_type] += 1
+                                print(
+                                    f"Scraped job (Valid): Title: {job_data['title']}, Company: {job_data['company']}, Date: {job_data['publication_date']}")
+                                # Tambahkan kombinasi ke set
+                                existing_combinations.add(combination)
+                            else:
+                                print(
+                                    f"Scraped job (Duplicate): Title: {job_data['title']}, Company: {job_data['company']}, Date: {job_data['publication_date']}")
+                        else:
+                            print(
+                                f"Scraped job (Invalid): Title: {job_data['title']}, Company: {job_data['company']}, Date: {job_data['publication_date']}")
 
                 time.sleep(scroll_pause_time)
                 scroll_height = driver.execute_script("return document.body.scrollHeight;")
@@ -90,5 +135,9 @@ class Command(BaseCommand):
                 job_link=job['job_link'],
                 defaults=job
             )
+            print(f"Saved job: Title: {job['title']}, Company: {job['company']}, Date: {job['publication_date']}")
 
         self.stdout.write(self.style.SUCCESS(f'Successfully scraped {len(all_jobs)} jobs from LinkedIn'))
+
+        for job_type, count in job_counts.items():
+            self.stdout.write(self.style.SUCCESS(f'Total valid jobs for {job_type}: {count}'))
