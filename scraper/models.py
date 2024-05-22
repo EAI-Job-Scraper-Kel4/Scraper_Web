@@ -6,7 +6,7 @@ class Job(models.Model):
     location = models.CharField(max_length=255)
     company = models.CharField(max_length=255)
     source = models.CharField(max_length=255)
-    job_link = models.URLField(unique=True)
+    job_link = models.URLField(unique=False)
 
     def __str__(self):
         return self.title

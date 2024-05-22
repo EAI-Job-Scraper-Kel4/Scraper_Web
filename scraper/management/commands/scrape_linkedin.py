@@ -54,7 +54,8 @@ class Command(BaseCommand):
         job_counts = {job_type: 0 for job_type in job_types}  # Dictionary to count valid jobs for each job type
 
         # Ambil semua kombinasi yang ada di database
-        existing_combinations = set(Job.objects.filter(source='LinkedIn').values_list('title', 'publication_date', 'location', 'company'))
+        existing_combinations = set(
+            Job.objects.filter(source='LinkedIn').values_list('title', 'publication_date', 'location', 'company'))
 
         for job_type in job_types:
             self.stdout.write(self.style.SUCCESS(f'Scraping jobs for: {job_type}'))
@@ -63,7 +64,7 @@ class Command(BaseCommand):
             driver.get(job_url)
             time.sleep(2)
 
-            scroll_pause_time = 1
+            scroll_pause_time = 0.5
             screen_height = driver.execute_script("return window.screen.height;")
             i = 1
 
@@ -104,7 +105,8 @@ class Command(BaseCommand):
                             'job_link': link.get('href')
                         }
 
-                        combination = (job_data['title'], job_data['publication_date'], job_data['location'], job_data['company'])
+                        combination = (
+                        job_data['title'], job_data['publication_date'], job_data['location'], job_data['company'])
 
                         # Validasi apakah tanggal publikasi masih dalam 2 bulan terakhir
                         if publication_date >= datetime.now().date() - timedelta(days=60):
@@ -122,6 +124,15 @@ class Command(BaseCommand):
                         else:
                             print(
                                 f"Scraped job (Invalid): Title: {job_data['title']}, Company: {job_data['company']}, Date: {job_data['publication_date']}")
+
+                # Check if "See more jobs" button is visible and click it
+                try:
+                    see_more_button = driver.find_element(By.CLASS_NAME, 'infinite-scroller__show-more-button')
+                    if see_more_button.is_displayed():
+                        see_more_button.click()
+                        time.sleep(scroll_pause_time)
+                except Exception as e:
+                    print("No 'See more jobs' button found or couldn't click it.")
 
                 time.sleep(scroll_pause_time)
                 scroll_height = driver.execute_script("return document.body.scrollHeight;")
@@ -141,3 +152,4 @@ class Command(BaseCommand):
 
         for job_type, count in job_counts.items():
             self.stdout.write(self.style.SUCCESS(f'Total valid jobs for {job_type}: {count}'))
+
