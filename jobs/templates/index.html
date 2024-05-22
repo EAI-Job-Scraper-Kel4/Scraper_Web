@@ -56,7 +56,7 @@
     <div class="search-params">
         <input id="jobTitle" type="text" placeholder="Job Name">
         <input id="company" type="text" placeholder="Company">
-        <input id="location" type="text" placeholder="Location">
+        <input id="jobLocation" type="text" placeholder="jobLocation">
         <input id="publicationDate" type="text" placeholder="Publication Date">
     </div>
     <button id="searchButton" type="button">Search</button>
@@ -71,7 +71,7 @@ document.getElementById("searchButton").addEventListener("click", function() {
     // Get search parameters from input fields
     var title = document.getElementById("jobTitle").value.trim();
     var company = document.getElementById("company").value.trim();
-    var location = document.getElementById("location").value.trim();
+    var jobLocation = document.getElementById("jobLocation").value.trim();
     var publicationDate = document.getElementById("publicationDate").value.trim();
 
     // Construct URL with search parameters
@@ -82,11 +82,11 @@ document.getElementById("searchButton").addEventListener("click", function() {
     if (company !== "") {
         url += "company=" + encodeURIComponent(company) + "&";
     }
-    if (location !== "") {
-        url += "location=" + encodeURIComponent(location) + "&";
+    if (jobLocation !== "") {
+        url += "jobLocation=" + encodeURIComponent(jobLocation) + "&";
     }
     if (publicationDate !== "") {
-        url += "publication_date=" + encodeURIComponent(publicationDate) + "&";
+        url += "publicationDate=" + encodeURIComponent(publicationDate) + "&";
     }
 
     // Remove trailing '&' if present
