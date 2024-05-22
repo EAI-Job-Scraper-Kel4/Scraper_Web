@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'scraper',
     'job_api',
+    'jobs',
 ]
 
 MIDDLEWARE = [
