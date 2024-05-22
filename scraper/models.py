@@ -9,4 +9,4 @@ class Job(models.Model):
     source_url = models.URLField(unique=True)
 
     def __str__(self):
-        return self.title
+        return self.job_name

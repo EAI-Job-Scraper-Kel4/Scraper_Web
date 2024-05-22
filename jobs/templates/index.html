@@ -54,34 +54,73 @@
 
 <div class="container">
     <div class="search-params">
-        <input type="text" placeholder="Job Title">
-        <input type="text" placeholder="Company">
-        <input type="text" placeholder="Location">
-        <input type="text" placeholder="Publication Date">
+        <input id="jobTitle" type="text" placeholder="Job Name">
+        <input id="company" type="text" placeholder="Company">
+        <input id="location" type="text" placeholder="Location">
+        <input id="publicationDate" type="text" placeholder="Publication Date">
     </div>
-    <button type="button">Search</button>
+    <button id="searchButton" type="button">Search</button>
 
-    <ul class="search-results">
-        <li>
-            <h3>Software Engineer</h3>
-            <p>Google</p>
-            <p>Mountain View, CA</p>
-            <p>May 20, 2024</p>
-        </li>
-        <li>
-            <h3>Marketing Manager</h3>
-            <p>Facebook</p>
-            <p>Menlo Park, CA</p>
-            <p>May 18, 2024</p>
-        </li>
-        <li>
-            <h3>Data Analyst</h3>
-            <p>Amazon</p>
-            <p>Seattle, WA</p>
-            <p>May 15, 2024</p>
-        </li>
+    <ul id="searchResults" class="search-results">
+        <!-- Search results will be displayed here -->
     </ul>
 </div>
+
+<script>
+document.getElementById("searchButton").addEventListener("click", function() {
+    // Get search parameters from input fields
+    var title = document.getElementById("jobTitle").value.trim();
+    var company = document.getElementById("company").value.trim();
+    var location = document.getElementById("location").value.trim();
+    var publicationDate = document.getElementById("publicationDate").value.trim();
+
+    // Construct URL with search parameters
+    var url = "/api/joblist/?";
+    if (title !== "") {
+        url += "job_name=" + encodeURIComponent(title) + "&";
+    }
+    if (company !== "") {
+        url += "company=" + encodeURIComponent(company) + "&";
+    }
+    if (location !== "") {
+        url += "job_location=" + encodeURIComponent(location) + "&";
+    }
+    if (publicationDate !== "") {
+        url += "publication_date=" + encodeURIComponent(publicationDate) + "&";
+    }
+
+    // Remove trailing '&' if present
+    if (url.slice(-1) === "&") {
+        url = url.slice(0, -1);
+    }
+
+    // Make AJAX request to API endpoint
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", url, true);
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+            var searchResults = JSON.parse(xhr.responseText);
+            displaySearchResults(searchResults);
+        }
+    };
+    xhr.send();
+});
+
+
+function displaySearchResults(results) {
+    var searchResultsElement = document.getElementById("searchResults");
+    searchResultsElement.innerHTML = ""; // Clear previous search results
+
+    results.forEach(function(result) {
+        var li = document.createElement("li");
+        li.innerHTML = "<h3>" + result.job_name + "</h3>" +
+                       "<p>" + result.company + "</p>" +
+                       "<p>" + result.job_location + "</p>" +
+                       "<p>" + result.publication_date + "</p>";
+        searchResultsElement.appendChild(li);
+    });
+}
+</script>
 
 </body>
 </html>
