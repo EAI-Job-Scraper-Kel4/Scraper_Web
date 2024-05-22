@@ -83,7 +83,7 @@ document.getElementById("searchButton").addEventListener("click", function() {
         url += "company=" + encodeURIComponent(company) + "&";
     }
     if (location !== "") {
-        url += "job_location=" + encodeURIComponent(location) + "&";
+        url += "location=" + encodeURIComponent(location) + "&";
     }
     if (publicationDate !== "") {
         url += "publication_date=" + encodeURIComponent(publicationDate) + "&";
@@ -106,18 +106,26 @@ document.getElementById("searchButton").addEventListener("click", function() {
     xhr.send();
 });
 
+function createClickableContainer(jobData) {
+    var li = document.createElement("li");
+    var jobLink = document.createElement("a");
+    jobLink.setAttribute("href", jobData.source_url);
+    jobLink.setAttribute("target", "_blank"); // Open link in a new tab
+    jobLink.innerHTML = "<h3>" + jobData.job_name + "</h3>" +
+                        "<p>" + jobData.company + "</p>" +
+                        "<p>" + jobData.job_location + "</p>" +
+                        "<p>" + jobData.publication_date + "</p>";
+    li.appendChild(jobLink);
+    return li;
+}
 
 function displaySearchResults(results) {
     var searchResultsElement = document.getElementById("searchResults");
     searchResultsElement.innerHTML = ""; // Clear previous search results
 
     results.forEach(function(result) {
-        var li = document.createElement("li");
-        li.innerHTML = "<h3>" + result.job_name + "</h3>" +
-                       "<p>" + result.company + "</p>" +
-                       "<p>" + result.job_location + "</p>" +
-                       "<p>" + result.publication_date + "</p>";
-        searchResultsElement.appendChild(li);
+        var container = createClickableContainer(result);
+        searchResultsElement.appendChild(container);
     });
 }
 </script>
