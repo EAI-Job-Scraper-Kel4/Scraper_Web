@@ -36,7 +36,7 @@ class Command(BaseCommand):
         max_pages = {}
 
         # Ambil semua kombinasi yang ada di database
-        existing_combinations = set(Job.objects.values_list('title', 'publication_date', 'location', 'company'))
+        existing_combinations = set(Job.objects.filter(source='JobStreet').values_list('title', 'publication_date', 'location', 'company'))
 
         for job_type in job_types:
             self.stdout.write(self.style.SUCCESS(f'Scraping jobs for: {job_type}'))

@@ -54,7 +54,7 @@ class Command(BaseCommand):
         job_counts = {job_type: 0 for job_type in job_types}  # Dictionary to count valid jobs for each job type
 
         # Ambil semua kombinasi yang ada di database
-        existing_combinations = set(Job.objects.values_list('title', 'publication_date', 'location', 'company'))
+        existing_combinations = set(Job.objects.filter(source='LinkedIn').values_list('title', 'publication_date', 'location', 'company'))
 
         for job_type in job_types:
             self.stdout.write(self.style.SUCCESS(f'Scraping jobs for: {job_type}'))
