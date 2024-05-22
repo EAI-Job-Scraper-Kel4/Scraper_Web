@@ -19,7 +19,7 @@ def get_jobs(request):
     if publication_date:
         jobs = jobs.filter(publication_date__icontains=publication_date)
     if location:
-        jobs = jobs.filter(location__icontains=location)
+        jobs = jobs.filter(job_location__icontains=location)
     if company:
         jobs = jobs.filter(company__icontains=company)
 
