@@ -56,10 +56,11 @@
     <div class="search-params">
         <input id="jobTitle" type="text" placeholder="Job Name">
         <input id="company" type="text" placeholder="Company">
-        <input id="location" type="text" placeholder="Location">
+        <input id="jobLocation" type="text" placeholder="jobLocation">
         <input id="publicationDate" type="text" placeholder="Publication Date">
     </div>
     <button id="searchButton" type="button">Search</button>
+    
 
     <ul id="searchResults" class="search-results">
         <!-- Search results will be displayed here -->
@@ -71,7 +72,7 @@ document.getElementById("searchButton").addEventListener("click", function() {
     // Get search parameters from input fields
     var title = document.getElementById("jobTitle").value.trim();
     var company = document.getElementById("company").value.trim();
-    var location = document.getElementById("location").value.trim();
+    var jobLocation = document.getElementById("jobLocation").value.trim();
     var publicationDate = document.getElementById("publicationDate").value.trim();
 
     // Construct URL with search parameters
@@ -82,11 +83,11 @@ document.getElementById("searchButton").addEventListener("click", function() {
     if (company !== "") {
         url += "company=" + encodeURIComponent(company) + "&";
     }
-    if (location !== "") {
-        url += "job_location=" + encodeURIComponent(location) + "&";
+    if (jobLocation !== "") {
+        url += "jobLocation=" + encodeURIComponent(jobLocation) + "&";
     }
     if (publicationDate !== "") {
-        url += "publication_date=" + encodeURIComponent(publicationDate) + "&";
+        url += "publicationDate=" + encodeURIComponent(publicationDate) + "&";
     }
 
     // Remove trailing '&' if present
@@ -106,18 +107,26 @@ document.getElementById("searchButton").addEventListener("click", function() {
     xhr.send();
 });
 
+function createClickableContainer(jobData) {
+    var li = document.createElement("li");
+    var jobLink = document.createElement("a");
+    jobLink.setAttribute("href", jobData.source_url);
+    jobLink.setAttribute("target", "_blank"); // Open link in a new tab
+    jobLink.innerHTML = "<h3>" + jobData.job_name + "</h3>" +
+                        "<p>" + jobData.company + "</p>" +
+                        "<p>" + jobData.job_location + "</p>" +
+                        "<p>" + jobData.publication_date + "</p>";
+    li.appendChild(jobLink);
+    return li;
+}
 
 function displaySearchResults(results) {
     var searchResultsElement = document.getElementById("searchResults");
     searchResultsElement.innerHTML = ""; // Clear previous search results
 
     results.forEach(function(result) {
-        var li = document.createElement("li");
-        li.innerHTML = "<h3>" + result.job_name + "</h3>" +
-                       "<p>" + result.company + "</p>" +
-                       "<p>" + result.job_location + "</p>" +
-                       "<p>" + result.publication_date + "</p>";
-        searchResultsElement.appendChild(li);
+        var container = createClickableContainer(result);
+        searchResultsElement.appendChild(container);
     });
 }
 </script>
