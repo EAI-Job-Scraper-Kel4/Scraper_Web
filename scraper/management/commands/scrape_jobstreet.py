@@ -1,20 +1,20 @@
-# scraper/management/commands/scrape_jobstreet.py
-
 import requests
 from bs4 import BeautifulSoup
 from django.core.management.base import BaseCommand
 from scraper.models import Job
 from datetime import datetime, timedelta
 import json
+
 class Command(BaseCommand):
     help = 'Scrape job listings from JobStreet'
+
     def handle(self, *args, **kwargs):
         job_types = [
             'programmer', 'data', 'network', 'cyber security',
             'software developer', 'data scientist', 'data analyst', 'data engineer',
             'system administrator', 'network engineer', 'cybersecurity analyst',
             'full stack developer', 'backend developer', 'frontend developer',
-            'machine learning engineer', 'IT support', 'cloud engineer',
+            'machine learning engineer', 'cloud engineer',
             'devops engineer', 'database administrator', 'AI engineer', 'QA engineer',
             'IT consultant', 'IT project manager', 'IT business analyst',
             'IT security specialist', 'IT auditor', 'IT compliance officer', 'back end', 'front end',
@@ -26,9 +26,18 @@ class Command(BaseCommand):
             'data warehouse developer', 'embedded systems engineer', 'firmware engineer', 'iot developer',
             'it operations manager', 'site reliability engineer', 'systems engineer', 'blockchain developer',
             'ai research scientist', 'robotics engineer', 'security operations center analyst',
-            'threat intelligence analyst',
-            'digital forensics analyst', 'identity and access management specialist', 'it risk manager',
-            'vulnerability analyst'
+            'threat intelligence analyst', 'digital forensics analyst', 'identity and access management specialist',
+            'it risk manager', 'vulnerability analyst', 'data mining specialist', 'data visualization specialist',
+            'data governance specialist', 'business intelligence', 'chief data officer',
+            'cybersecurity architect',
+            'incident response specialist', 'cybersecurity forensics analyst', 'cybersecurity trainer',
+            'chief information security officer',
+            'network architect', 'network operations center technician', 'wireless network engineer',
+            'cloud network engineer',
+            'network support technician', 'application developer', 'software architect', 'systems programmer',
+            'embedded software developer', 'middleware developer', 'it infrastructure engineer',
+            'cloud solutions architect',
+            'technical support engineer', 'it systems analyst', 'it asset manager'
         ]
 
         all_jobs = []
@@ -47,28 +56,16 @@ class Command(BaseCommand):
 
             # Get the number of pages
             next_page_anchor = soup.find("a", {"aria-label": "Selanjutnya"})
-            previous_page_anchor = next_page_anchor.find_previous("a")
+            previous_page_anchor = next_page_anchor.find_previous("a") if next_page_anchor else None
             current_max_page = int(previous_page_anchor.text.strip()) if previous_page_anchor else 1
             max_pages[job_type] = current_max_page
 
             page_number = 1
-            while True:
+            while page_number <= current_max_page:
                 self.stdout.write(self.style.SUCCESS(f'Scraping page {page_number} for {job_type}'))
                 url = f"https://www.jobstreet.co.id/id/{striped_type}-jobs?createdAt=60d&page={page_number}"
                 page = requests.get(url)
                 soup = BeautifulSoup(page.content, "html.parser")
-                next_page_anchor = soup.find("a", {"aria-label": "Selanjutnya"})
-                if next_page_anchor is None:
-                    break
-
-                previous_page_anchor = next_page_anchor.find_previous("a")
-                current_max_page = int(previous_page_anchor.text.strip()) if previous_page_anchor else 1
-                self.stdout.write(self.style.SUCCESS(f'Found {current_max_page} pages for {job_type}'))
-                max_pages[job_type] = current_max_page
-
-                if page_number == current_max_page:
-                    break
-                page_number += 1
 
                 # Find the script tag containing JSON data
                 script_tag = soup.find('script', text=lambda text: text and 'window.SEEK_REDUX_DATA =' in text)
@@ -115,16 +112,15 @@ class Command(BaseCommand):
                             }
 
                             combination = (
-                            job_data['title'], job_data['publication_date'], job_data['location'], job_data['company'])
+                                job_data['title'], job_data['publication_date'], job_data['location'], job_data['company']
+                            )
 
                             if publication_date >= datetime.now().date() - timedelta(days=60):
-                                # Periksa apakah kombinasi sudah ada di database
                                 if combination not in existing_combinations:
                                     all_jobs.append(job_data)
                                     job_counts[job_type] += 1
                                     print(
                                         f"Scraped job (Valid): Title: {job_data['title']}, Company: {job_data['company']}, Date: {job_data['publication_date']}")
-                                    # Tambahkan kombinasi ke set
                                     existing_combinations.add(combination)
                                 else:
                                     print(
@@ -136,12 +132,23 @@ class Command(BaseCommand):
                         print(f"Error parsing JSON data: {e}")
                         continue
 
+                page_number += 1
+
         for job in all_jobs:
-            Job.objects.update_or_create(
-                job_link=job['job_link'],
-                defaults=job
-            )
-            print(f"Saved job: Title: {job['title']}, Company: {job['company']}, Date: {job['publication_date']}")
+            try:
+                job_instance, created = Job.objects.update_or_create(
+                    title=job['title'],
+                    publication_date=job['publication_date'],
+                    location=job['location'],
+                    company=job['company'],
+                    defaults=job
+                )
+                if created:
+                    print(f"Saved job: Title: {job['title']}, Company: {job['company']}, Date: {job['publication_date']}")
+                else:
+                    print(f"Updated job: Title: {job['title']}, Company: {job['company']}, Date: {job['publication_date']}")
+            except Exception as e:
+                print(f"Error saving job: {job['title']}, Company: {job['company']}, Error: {e}")
 
         self.stdout.write(self.style.SUCCESS(f'Successfully scraped {len(all_jobs)} jobs from JobStreet'))
 

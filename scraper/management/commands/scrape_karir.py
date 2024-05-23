@@ -1,5 +1,3 @@
-# scraper/management/commands/scrape_karir.py
-
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -28,8 +26,36 @@ class Command(BaseCommand):
         driver = webdriver.Chrome(options=chrome_options)
 
         job_types = [
-            'programmer', 'data',
+            'programmer', 'data', 'network', 'cyber security',
+            'software developer', 'data scientist', 'data analyst', 'data engineer',
+            'system administrator', 'network engineer', 'cybersecurity analyst',
+            'full stack developer', 'backend developer', 'frontend developer',
+            'machine learning engineer', 'cloud engineer',
+            'devops engineer', 'database administrator', 'AI engineer', 'QA engineer',
+            'IT consultant', 'IT project manager', 'IT business analyst',
+            'IT security specialist', 'IT auditor', 'IT compliance officer', 'back end', 'front end',
+            'web developer', 'mobile developer', 'mobile app developer', 'android developer', 'ios developer',
+            'game developer', 'game programmer', 'full stack', 'fullstack', 'penetration tester',
+            'ethical hacker', 'security consultant', 'security analyst', 'security engineer', 'security architect',
+            'security specialist', 'security administrator', 'security auditor', 'security compliance officer',
+            'network security engineer', 'network administrator', 'data architect', 'big data engineer',
+            'data warehouse developer', 'embedded systems engineer', 'firmware engineer', 'iot developer',
+            'it operations manager', 'site reliability engineer', 'systems engineer', 'blockchain developer',
+            'ai research scientist', 'robotics engineer', 'security operations center analyst',
+            'threat intelligence analyst', 'digital forensics analyst', 'identity and access management specialist',
+            'it risk manager', 'vulnerability analyst', 'data mining specialist', 'data visualization specialist',
+            'data governance specialist', 'business intelligence', 'chief data officer',
+            'cybersecurity architect',
+            'incident response specialist', 'cybersecurity forensics analyst', 'cybersecurity trainer',
+            'chief information security officer',
+            'network architect', 'network operations center technician', 'wireless network engineer',
+            'cloud network engineer',
+            'network support technician', 'application developer', 'software architect', 'systems programmer',
+            'embedded software developer', 'middleware developer', 'it infrastructure engineer',
+            'cloud solutions architect',
+            'technical support engineer', 'it systems analyst', 'it asset manager'
         ]
+
 
         all_jobs = []
         job_counts = {job_type: 0 for job_type in job_types}
@@ -48,10 +74,6 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.SUCCESS(f'Scraping page {page_number} for {job_type}'))
                 job_src = driver.page_source
                 soup = BeautifulSoup(job_src, "html.parser")
-
-                # Save HTML to file for inspection
-                with open(f'karir_page_{page_number}.html', 'w', encoding='utf-8') as file:
-                    file.write(soup.prettify())
 
                 job_containers = soup.find_all("div", class_="jsx-4093401097 container")
 
@@ -120,7 +142,10 @@ class Command(BaseCommand):
         for job in all_jobs:
             try:
                 job_instance, created = Job.objects.update_or_create(
-                    job_link=job['job_link'],
+                    title=job['title'],
+                    publication_date=job['publication_date'],
+                    location=job['location'],
+                    company=job['company'],
                     defaults=job
                 )
                 if created:

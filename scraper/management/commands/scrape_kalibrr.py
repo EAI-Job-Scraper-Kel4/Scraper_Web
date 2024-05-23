@@ -1,5 +1,3 @@
-# scraper/management/commands/scrape_kalibrr.py
-
 import requests
 from django.core.management.base import BaseCommand
 from scraper.models import Job
@@ -16,7 +14,7 @@ class Command(BaseCommand):
             'software-developer', 'data-scientist', 'data-analyst', 'data-engineer',
             'system-administrator', 'network-engineer', 'cybersecurity-analyst',
             'full-stack-developer', 'backend-developer', 'frontend-developer',
-            'machine-learning-engineer', 'IT-support', 'cloud-engineer',
+            'machine-learning-engineer', 'cloud-engineer',
             'devops-engineer', 'database-administrator', 'AI-engineer', 'QA-engineer',
             'IT-consultant', 'IT-project-manager', 'IT-business-analyst',
             'IT-security-specialist', 'IT-auditor', 'IT-compliance-officer', 'back-end', 'front-end',
@@ -28,9 +26,18 @@ class Command(BaseCommand):
             'data-warehouse-developer', 'embedded-systems-engineer', 'firmware-engineer', 'iot-developer',
             'it-operations-manager', 'site-reliability-engineer', 'systems-engineer', 'blockchain-developer',
             'ai-research-scientist', 'robotics-engineer', 'security-operations-center-analyst',
-            'threat-intelligence-analyst',
-            'digital-forensics-analyst', 'identity-and-access-management-specialist', 'it-risk-manager',
-            'vulnerability-analyst'
+            'threat-intelligence-analyst', 'digital-forensics-analyst', 'identity-and-access-management-specialist',
+            'it-risk-manager', 'vulnerability-analyst', 'data-mining-specialist', 'data-visualization-specialist',
+            'data-governance-specialist', 'business-intelligence', 'chief-data-officer',
+            'cybersecurity-architect',
+            'incident-response-specialist', 'cybersecurity-forensics-analyst', 'cybersecurity-trainer',
+            'chief-information-security-officer',
+            'network-architect', 'network-operations-center-technician', 'wireless-network-engineer',
+            'cloud-network-engineer',
+            'network-support-technician', 'application-developer', 'software-architect', 'systems-programmer',
+            'embedded-software-developer', 'middleware-developer', 'it-infrastructure-engineer',
+            'cloud-solutions-architect',
+            'technical-support-engineer', 'it-systems-analyst', 'it-asset-manager'
         ]
 
         all_jobs = []
@@ -100,11 +107,20 @@ class Command(BaseCommand):
                 continue
 
         for job in all_jobs:
-            Job.objects.update_or_create(
-                job_link=job['job_link'],
-                defaults=job
-            )
-            print(f"Saved job: Title: {job['title']}, Company: {job['company']}, Date: {job['publication_date']}")
+            try:
+                job_instance, created = Job.objects.update_or_create(
+                    title=job['title'],
+                    publication_date=job['publication_date'],
+                    location=job['location'],
+                    company=job['company'],
+                    defaults=job
+                )
+                if created:
+                    print(f"Saved job: Title: {job['title']}, Company: {job['company']}, Date: {job['publication_date']}")
+                else:
+                    print(f"Updated job: Title: {job['title']}, Company: {job['company']}, Date: {job['publication_date']}")
+            except Exception as e:
+                print(f"Error saving job: {job['title']}, Company: {job['company']}, Error: {e}")
 
         self.stdout.write(self.style.SUCCESS(f'Successfully scraped {len(all_jobs)} jobs from Kalibrr'))
 
