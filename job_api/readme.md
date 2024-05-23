@@ -1,5 +1,3 @@
-Berikut adalah dokumentasi penggunaan API untuk endpoint `get_jobs`.
-
 ### Endpoint: Get Jobs
 
 #### URL
@@ -29,29 +27,34 @@ GET /api/joblist/
    - **Type:** String
    - **Example:** `2024-05-15`
 
-5. **jobLocation** (optional)
+5. **publicationDateCategory** (optional)
+   - **Description:** Kategori tanggal publikasi, seperti "today", "two_days_ago", "one_week_ago", "two_weeks_ago", atau "one_month_ago".
+   - **Type:** String
+   - **Example:** `today`
+
+6. **jobLocation** (optional)
    - **Description:** Lokasi pekerjaan yang ingin dicari.
    - **Type:** String
    - **Example:** `Jakarta`
 
-6. **company** (optional)
+7. **company** (optional)
    - **Description:** Nama perusahaan yang ingin dicari.
    - **Type:** String
    - **Example:** `Tech Solutions`
 
-7. **limit** (optional)
+8. **limit** (optional)
    - **Description:** Batas jumlah pekerjaan yang akan ditampilkan.
    - **Type:** Integer
    - **Example:** `10`
 
-8. **offset** (optional)
-   - **Description:** Mengatur offset untuk pagination.
+9. **page** (optional)
+   - **Description:** Nomor halaman untuk pagination.
    - **Type:** Integer
-   - **Example:** `0`
+   - **Example:** `1`
 
 #### Example Request
 ```
-GET http://127.0.0.1:8000/api/joblist/?jobName=data-analyst&publicationDateAfter=2024-05-01&publicationDateBefore=2024-05-15&jobLocation=Jakarta&company=Tech%20Solutions&limit=10&offset=0
+GET http://127.0.0.1:8000/api/joblist/?jobName=data-analyst&publicationDateAfter=2024-05-01&publicationDateBefore=2024-05-15&jobLocation=Jakarta&company=Tech%20Solutions&limit=10&page=1
 ```
 
 #### Response
@@ -61,26 +64,29 @@ GET http://127.0.0.1:8000/api/joblist/?jobName=data-analyst&publicationDateAfter
 
 ##### Example Response
 ```json
-[
-    {
-        "id": 1,
-        "job_name": "Data Analyst",
-        "publication_date": "2024-05-10",
-        "job_location": "Jakarta, Indonesia",
-        "company": "Tech Solutions",
-        "source": "jobstreet.co.id",
-        "source_url": "https://jobstreet.co.id/job/12345"
-    },
-    {
-        "id": 2,
-        "job_name": "Data Scientist",
-        "publication_date": "2024-05-12",
-        "job_location": "Jakarta, Indonesia",
-        "company": "Data Corp",
-        "source": "linkedin.com",
-        "source_url": "https://linkedin.com/job/67890"
-    }
-]
+{
+    "total": 2,
+    "results": [
+        {
+            "id": 1,
+            "job_name": "Data Analyst",
+            "publication_date": "2024-05-10",
+            "job_location": "Jakarta, Indonesia",
+            "company": "Tech Solutions",
+            "source": "jobstreet.co.id",
+            "source_url": "https://jobstreet.co.id/job/12345"
+        },
+        {
+            "id": 2,
+            "job_name": "Data Scientist",
+            "publication_date": "2024-05-12",
+            "job_location": "Jakarta, Indonesia",
+            "company": "Data Corp",
+            "source": "linkedin.com",
+            "source_url": "https://linkedin.com/job/67890"
+        }
+    ]
+}
 ```
 
 #### Error Responses
@@ -101,6 +107,7 @@ GET http://127.0.0.1:8000/api/joblist/?jobName=data-analyst&publicationDateAfter
 - Jika tidak ada parameter yang diberikan, semua pekerjaan yang ada di database akan ditampilkan.
 - Parameter `jobName`, `jobLocation`, dan `company` menggunakan pencarian dengan metode `icontains`, sehingga hasil pencarian akan mencakup semua pekerjaan yang mengandung kata kunci yang diberikan.
 - Parameter `publicationDateAfter` dan `publicationDateBefore` memerlukan format tanggal `YYYY-MM-DD`.
+- Parameter `publicationDateCategory` memungkinkan pengguna untuk mencari pekerjaan berdasarkan kategori tanggal publikasi.
 
 ### How to Use
 
@@ -124,9 +131,7 @@ GET http://127.0.0.1:8000/api/joblist/?jobName=data-analyst&publicationDateAfter
    GET http://127.0.0.1:8000/api/joblist/?jobLocation=Jakarta
    ```
 
-5. **Menggunakan limit dan offset untuk pagination:**
+5. **Menggunakan limit dan halaman untuk pagination:**
    ```
-   GET http://127.0.0.1:8000/api/joblist/?limit=10&offset=0
+   GET http://127.0.0.1:8000/api/joblist/?limit=10&page=1
    ```
-
-Dengan dokumentasi ini, Anda dapat menggunakan endpoint `get_jobs` untuk mengambil data pekerjaan sesuai dengan kriteria yang Anda butuhkan.
