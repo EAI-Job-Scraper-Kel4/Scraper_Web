@@ -1,7 +1,5 @@
-# scraper/serializers.py
-
 from rest_framework import serializers
-from .models import Job
+from scraper.models import Job
 
 class JobSerializer(serializers.ModelSerializer):
     job_name = serializers.CharField(source='title')
@@ -10,4 +8,4 @@ class JobSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Job
-        fields = ['id', 'job_name', 'publication_date', 'job_location', 'company', 'source', 'source_url']
+        fields = ['job_name', 'publication_date', 'job_location', 'company', 'source', 'source_url']

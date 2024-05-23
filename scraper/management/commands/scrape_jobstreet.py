@@ -4,13 +4,15 @@ from django.core.management.base import BaseCommand
 from scraper.models import Job
 from datetime import datetime, timedelta
 import json
+import threading
+import signal
 
 class Command(BaseCommand):
     help = 'Scrape job listings from JobStreet'
 
     def handle(self, *args, **kwargs):
         job_types = [
-            'programmer', 'data', 'network', 'cyber security',
+            'programmer', 'network', 'cyber security',
             'software developer', 'data scientist', 'data analyst', 'data engineer',
             'system administrator', 'network engineer', 'cybersecurity analyst',
             'full stack developer', 'backend developer', 'frontend developer',
@@ -28,7 +30,7 @@ class Command(BaseCommand):
             'ai research scientist', 'robotics engineer', 'security operations center analyst',
             'threat intelligence analyst', 'digital forensics analyst', 'identity and access management specialist',
             'it risk manager', 'vulnerability analyst', 'data mining specialist', 'data visualization specialist',
-            'data governance specialist', 'business intelligence', 'chief data officer',
+            'data governance', 'business intelligence', 'chief data officer',
             'cybersecurity architect',
             'incident response specialist', 'cybersecurity forensics analyst', 'cybersecurity trainer',
             'chief information security officer',
@@ -36,36 +38,61 @@ class Command(BaseCommand):
             'cloud network engineer',
             'network support technician', 'application developer', 'software architect', 'systems programmer',
             'embedded software developer', 'middleware developer', 'it infrastructure engineer',
-            'cloud solutions architect',
-            'technical support engineer', 'it systems analyst', 'it asset manager'
+            'cloud solutions architect', 'it systems analyst', 'statistician', 'data visualization', "nlp",
+            "natural language processing",
+            "sentiment analysis", "deep learning", "recommender system", "image processing", "computer vision",
+            "speech recognition", "artificial intelligence", "AI", "machine learning", "ML", "data science",
+            "LLM", "technical architect", "cloud architect", "cloud security", "AI developer", "predictive",
         ]
 
         all_jobs = []
         job_counts = {job_type: 0 for job_type in job_types}
+        total_valid_jobs = 0
+        total_duplicate_jobs = 0
+        total_invalid_jobs = 0
         max_pages = {}
 
         # Ambil semua kombinasi yang ada di database
         existing_combinations = set(Job.objects.filter(source='JobStreet').values_list('title', 'publication_date', 'location', 'company'))
 
-        for job_type in job_types:
-            self.stdout.write(self.style.SUCCESS(f'Scraping jobs for: {job_type}'))
+        # Event untuk menangkap sinyal terminasi
+        stop_event = threading.Event()
+
+        def signal_handler(sig, frame):
+            self.stdout.write(self.style.ERROR('Terminating scraping processes...'))
+            stop_event.set()
+
+        # Mengatur signal handler untuk menangkap SIGINT (Ctrl+C)
+        signal.signal(signal.SIGINT, signal_handler)
+        signal.signal(signal.SIGTERM, signal_handler)
+
+        def scrape_jobs(job_type):
+            if stop_event.is_set():
+                return []
+
             striped_type = job_type.replace(" ", "-")
-            url = f"https://www.jobstreet.co.id/id/{striped_type}-jobs?createdAt=60d"
-            page = requests.get(url)
-            soup = BeautifulSoup(page.content, "html.parser")
-
-            # Get the number of pages
-            next_page_anchor = soup.find("a", {"aria-label": "Selanjutnya"})
-            previous_page_anchor = next_page_anchor.find_previous("a") if next_page_anchor else None
-            current_max_page = int(previous_page_anchor.text.strip()) if previous_page_anchor else 1
-            max_pages[job_type] = current_max_page
-
             page_number = 1
-            while page_number <= current_max_page:
+            local_jobs = []
+            nonlocal total_valid_jobs, total_duplicate_jobs, total_invalid_jobs
+
+            while True:
                 self.stdout.write(self.style.SUCCESS(f'Scraping page {page_number} for {job_type}'))
+
                 url = f"https://www.jobstreet.co.id/id/{striped_type}-jobs?createdAt=60d&page={page_number}"
+
                 page = requests.get(url)
+
                 soup = BeautifulSoup(page.content, "html.parser")
+
+                next_page_anchor = soup.find("a", {"aria-label": "Selanjutnya"})
+
+                if next_page_anchor is None:
+                    break
+
+                previous_page_anchor = next_page_anchor.find_previous("a")
+                current_max_page = int(previous_page_anchor.text.strip()) if previous_page_anchor else 1
+                self.stdout.write(self.style.SUCCESS(f'Found {current_max_page} pages for {job_type}'))
+                max_pages[job_type] = current_max_page
 
                 # Find the script tag containing JSON data
                 script_tag = soup.find('script', text=lambda text: text and 'window.SEEK_REDUX_DATA =' in text)
@@ -97,7 +124,9 @@ class Command(BaseCommand):
                             company = job.get('companyName')
                             job_id = job.get('id')
                             display_type = job.get('displayType')
-                            link = f"https://www.jobstreet.co.id/id/{striped_type}-jobs?jobId={job_id}&type={display_type}"
+                            encoded_title = requests.utils.quote(title)
+
+                            link = f"https://www.jobstreet.co.id/id/%22{encoded_title}%22-jobs?jobId={job_id}&type={display_type}"
 
                             if company is None:
                                 company = job.get("advertiser").get("description")
@@ -117,22 +146,33 @@ class Command(BaseCommand):
 
                             if publication_date >= datetime.now().date() - timedelta(days=60):
                                 if combination not in existing_combinations:
-                                    all_jobs.append(job_data)
+                                    local_jobs.append(job_data)
                                     job_counts[job_type] += 1
-                                    print(
-                                        f"Scraped job (Valid): Title: {job_data['title']}, Company: {job_data['company']}, Date: {job_data['publication_date']}")
+                                    total_valid_jobs += 1
+                                    self.stdout.write(self.style.SUCCESS(
+                                        f"Scraped job (Valid)({job_type}): Title: {job_data['title']}, Company: {job_data['company']}, Date: {job_data['publication_date']}"))
                                     existing_combinations.add(combination)
                                 else:
-                                    print(
-                                        f"Scraped job (Duplicate): Title: {job_data['title']}, Company: {job_data['company']}, Date: {job_data['publication_date']}")
+                                    total_duplicate_jobs += 1
+                                    self.stdout.write(self.style.SUCCESS(
+                                        f"Scraped job (Duplicate)({job_type}): Title: {job_data['title']}, Company: {job_data['company']}, Date: {job_data['publication_date']}"))
                             else:
-                                print(
-                                    f"Scraped job (Invalid): Title: {job_data['title']}, Company: {job_data['company']}, Date: {job_data['publication_date']}")
+                                total_invalid_jobs += 1
+                                self.stdout.write(self.style.SUCCESS(
+                                    f"Scraped job (Invalid)({job_type}): Title: {job_data['title']}, Company: {job_data['company']}, Date: {job_data['publication_date']}"))
                     except (json.JSONDecodeError, IndexError) as e:
-                        print(f"Error parsing JSON data: {e}")
+                        self.stdout.write(self.style.ERROR(f"Error parsing JSON data: {e}"))
                         continue
 
+                if page_number == current_max_page:
+                    break
                 page_number += 1
+
+            return local_jobs
+
+        for job_type in job_types:
+            local_jobs = scrape_jobs(job_type)
+            all_jobs.extend(local_jobs)
 
         for job in all_jobs:
             try:
@@ -144,15 +184,19 @@ class Command(BaseCommand):
                     defaults=job
                 )
                 if created:
-                    print(f"Saved job: Title: {job['title']}, Company: {job['company']}, Date: {job['publication_date']}")
+                    self.stdout.write(self.style.SUCCESS(f"Saved job: Title: {job['title']}, Company: {job['company']}, Date: {job['publication_date']}"))
                 else:
-                    print(f"Updated job: Title: {job['title']}, Company: {job['company']}, Date: {job['publication_date']}")
+                    self.stdout.write(self.style.SUCCESS(f"Updated job: Title: {job['title']}, Company: {job['company']}, Date: {job['publication_date']}"))
             except Exception as e:
-                print(f"Error saving job: {job['title']}, Company: {job['company']}, Error: {e}")
+                self.stdout.write(self.style.ERROR(f"Error saving job: {job['title']}, Company: {job['company']}, Error: {e}"))
 
-        self.stdout.write(self.style.SUCCESS(f'Successfully scraped {len(all_jobs)} jobs from JobStreet'))
+        self.stdout.write(self.style.SUCCESS(f'Successfully scraped {total_valid_jobs + total_duplicate_jobs + total_invalid_jobs} jobs from JobStreet'))
+
+        self.stdout.write(self.style.SUCCESS(f'Total valid jobs: {total_valid_jobs}'))
+        self.stdout.write(self.style.SUCCESS(f'Total duplicate jobs: {total_duplicate_jobs}'))
+        self.stdout.write(self.style.SUCCESS(f'Total invalid jobs: {total_invalid_jobs}'))
 
         for job_type, count in job_counts.items():
             self.stdout.write(self.style.SUCCESS(f'Total valid jobs for {job_type}: {count}'))
         for job_type, max_page in max_pages.items():
-            print(f"Max page for {job_type}: {max_page}")
+            self.stdout.write(self.style.SUCCESS(f"Max page for {job_type}: {max_page}"))

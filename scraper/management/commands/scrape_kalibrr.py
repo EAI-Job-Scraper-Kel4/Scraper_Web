@@ -28,20 +28,27 @@ class Command(BaseCommand):
             'ai-research-scientist', 'robotics-engineer', 'security-operations-center-analyst',
             'threat-intelligence-analyst', 'digital-forensics-analyst', 'identity-and-access-management-specialist',
             'it-risk-manager', 'vulnerability-analyst', 'data-mining-specialist', 'data-visualization-specialist',
-            'data-governance-specialist', 'business-intelligence', 'chief-data-officer',
-            'cybersecurity-architect',
-            'incident-response-specialist', 'cybersecurity-forensics-analyst', 'cybersecurity-trainer',
-            'chief-information-security-officer',
-            'network-architect', 'network-operations-center-technician', 'wireless-network-engineer',
-            'cloud-network-engineer',
-            'network-support-technician', 'application-developer', 'software-architect', 'systems-programmer',
+            'data-governance', 'business-intelligence', 'chief-data-officer',
+            'cybersecurity-architect', 'incident-response-specialist', 'cybersecurity-forensics-analyst',
+            'cybersecurity-trainer',
+            'chief-information-security-officer', 'network-architect', 'network-operations-center-technician',
+            'wireless-network-engineer',
+            'cloud-network-engineer', 'network-support-technician', 'application-developer', 'software-architect',
+            'systems-programmer',
             'embedded-software-developer', 'middleware-developer', 'it-infrastructure-engineer',
-            'cloud-solutions-architect',
-            'technical-support-engineer', 'it-systems-analyst', 'it-asset-manager'
+            'cloud-solutions-architect', 'it-systems-analyst', 'statistician', 'data-visualization', 'nlp',
+            'natural-language-processing', 'sentiment-analysis', 'deep-learning', 'recommender-system',
+            'image-processing',
+            'computer-vision', 'speech-recognition', 'artificial-intelligence', 'AI', 'machine-learning', 'ML',
+            'data-science', 'LLM', 'technical-architect', 'cloud-architect', 'cloud-security', 'AI-developer',
+            'predictive'
         ]
 
         all_jobs = []
         job_counts = {job_type: 0 for job_type in job_types}
+        total_valid_jobs = 0
+        total_duplicate_jobs = 0
+        total_invalid_jobs = 0
 
         # Ambil semua kombinasi yang ada di database
         existing_combinations = set(
@@ -92,18 +99,21 @@ class Command(BaseCommand):
                         if combination not in existing_combinations:
                             all_jobs.append(job_data)
                             job_counts[job_type] += 1
-                            print(
-                                f"Scraped job (Valid): Title: {job_data['title']}, Company: {job_data['company']}, Date: {job_data['publication_date']}")
+                            total_valid_jobs += 1
+                            self.stdout.write(self.style.SUCCESS(
+                                f"Scraped job (Valid)({job_type}): Title: {job_data['title']}, Company: {job_data['company']}, Date: {job_data['publication_date']}"))
                             # Tambahkan kombinasi ke set
                             existing_combinations.add(combination)
                         else:
-                            print(
-                                f"Scraped job (Duplicate): Title: {job_data['title']}, Company: {job_data['company']}, Date: {job_data['publication_date']}")
+                            total_duplicate_jobs += 1
+                            self.stdout.write(self.style.SUCCESS(
+                                f"Scraped job (Duplicate)({job_type}): Title: {job_data['title']}, Company: {job_data['company']}, Date: {job_data['publication_date']}"))
                     else:
-                        print(
-                            f"Scraped job (Invalid): Title: {job_data['title']}, Company: {job_data['company']}, Date: {job_data['publication_date']}")
+                        total_invalid_jobs += 1
+                        self.stdout.write(self.style.SUCCESS(
+                            f"Scraped job (Invalid)({job_type}): Title: {job_data['title']}, Company: {job_data['company']}, Date: {job_data['publication_date']}"))
             except json.JSONDecodeError as e:
-                print(f"Error parsing JSON data for {job_type}: {e}")
+                self.stdout.write(self.style.ERROR(f"Error parsing JSON data for {job_type}: {e}"))
                 continue
 
         for job in all_jobs:
@@ -122,7 +132,11 @@ class Command(BaseCommand):
             except Exception as e:
                 print(f"Error saving job: {job['title']}, Company: {job['company']}, Error: {e}")
 
-        self.stdout.write(self.style.SUCCESS(f'Successfully scraped {len(all_jobs)} jobs from Kalibrr'))
+        self.stdout.write(self.style.SUCCESS(f'Successfully scraped {total_valid_jobs + total_duplicate_jobs + total_invalid_jobs} jobs from Kalibrr'))
+
+        self.stdout.write(self.style.SUCCESS(f'Total valid jobs: {total_valid_jobs}'))
+        self.stdout.write(self.style.SUCCESS(f'Total duplicate jobs: {total_duplicate_jobs}'))
+        self.stdout.write(self.style.SUCCESS(f'Total invalid jobs: {total_invalid_jobs}'))
 
         for job_type, count in job_counts.items():
             self.stdout.write(self.style.SUCCESS(f'Total valid jobs for {job_type}: {count}'))
