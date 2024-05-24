@@ -1,4 +1,4 @@
-Berikut adalah pembaruan untuk dokumentasi endpoint "Get Jobs":
+Here is the updated documentation for the "Get Jobs" endpoint:
 
 ### Endpoint: Get Jobs
 
@@ -44,19 +44,24 @@ GET /api/joblist/
    - **Type:** String
    - **Example:** `Tech Solutions,Data Corp`
 
-8. **limit** (optional)
+8. **source** (optional)
+   - **Description:** Sumber pekerjaan yang ingin dicari. Anda bisa menggunakan beberapa sumber yang dipisahkan oleh koma.
+   - **Type:** String
+   - **Example:** `linkedin,jobstreet`
+
+9. **limit** (optional)
    - **Description:** Batas jumlah pekerjaan yang akan ditampilkan.
    - **Type:** Integer atau String ('all')
    - **Example:** `10`
 
-9. **page** (optional)
-   - **Description:** Nomor halaman untuk pagination.
-   - **Type:** Integer
-   - **Example:** `1`
+10. **page** (optional)
+    - **Description:** Nomor halaman untuk pagination.
+    - **Type:** Integer
+    - **Example:** `1`
 
 #### Example Request
 ```
-GET http://127.0.0.1:8000/api/joblist/?jobName=data-analyst,cybersecurity&publicationDateAfter=2024-05-01&publicationDateBefore=2024-05-15&jobLocation=Jakarta,Bandung&company=Tech%20Solutions,Data%20Corp&limit=10&page=1
+GET http://127.0.0.1:8000/api/joblist/?jobName=data-analyst,cybersecurity&publicationDateAfter=2024-05-01&publicationDateBefore=2024-05-15&jobLocation=Jakarta,Bandung&company=Tech%20Solutions,Data%20Corp&source=linkedin,jobstreet&limit=10&page=1
 ```
 
 #### Response
@@ -107,7 +112,7 @@ GET http://127.0.0.1:8000/api/joblist/?jobName=data-analyst,cybersecurity&public
 
 - Semua parameter bersifat opsional.
 - Jika tidak ada parameter yang diberikan, semua pekerjaan yang ada di database akan ditampilkan.
-- Parameter `jobName`, `jobLocation`, dan `company` menggunakan pencarian dengan metode `icontains`, sehingga hasil pencarian akan mencakup semua pekerjaan yang mengandung kata kunci yang diberikan.
+- Parameter `jobName`, `jobLocation`, `company`, dan `source` menggunakan pencarian dengan metode `icontains`, sehingga hasil pencarian akan mencakup semua pekerjaan yang mengandung kata kunci yang diberikan.
 - Parameter `publicationDateAfter` dan `publicationDateBefore` memerlukan format tanggal `YYYY-MM-DD`.
 - Parameter `publicationDateCategory` memungkinkan pengguna untuk mencari pekerjaan berdasarkan kategori tanggal publikasi.
 - Parameter `limit` dapat digunakan dengan nilai 'all' untuk menampilkan semua hasil tanpa batas.
@@ -154,7 +159,17 @@ GET http://127.0.0.1:8000/api/joblist/?jobName=data-analyst,cybersecurity&public
    GET http://127.0.0.1:8000/api/joblist/?company=Tech%20Solutions,Data%20Corp
    ```
 
-9. **Menggunakan limit dan halaman untuk pagination:**
+9. **Menampilkan pekerjaan berdasarkan sumber:**
    ```
-   GET http://127.0.0.1:8000/api/joblist/?limit=10&page=1
+   GET http://127.0.0.1:8000/api/joblist/?source=linkedin
    ```
+
+10. **Menampilkan pekerjaan berdasarkan beberapa sumber:**
+    ```
+    GET http://127.0.0.1:8000/api/joblist/?source=linkedin,jobstreet
+    ```
+
+11. **Menggunakan limit dan halaman untuk pagination:**
+    ```
+    GET http://127.0.0.1:8000/api/joblist/?limit=10&page=1
+    ```

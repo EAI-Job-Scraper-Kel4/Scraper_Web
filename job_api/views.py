@@ -6,6 +6,49 @@ from datetime import datetime, timedelta
 from django.db.models import Q
 
 
+def build_query(param_list, field_name):
+    query = Q()
+    for item in param_list:
+        if item:
+            query |= Q(**{f"{field_name}__icontains": item})
+    return query
+
+
+def build_date_query(field_name, date_str, date_format='%Y-%m-%d'):
+    try:
+        date_value = datetime.strptime(date_str, date_format)
+        return Q(**{field_name: date_value})
+    except ValueError:
+        raise ValueError(f"Invalid format for {field_name}. Use {date_format}.")
+
+
+def build_date_range_query(field_name, date_str, comparison, date_format='%Y-%m-%d'):
+    try:
+        date_value = datetime.strptime(date_str, date_format)
+        return Q(**{f"{field_name}__{comparison}": date_value})
+    except ValueError:
+        raise ValueError(f"Invalid format for {field_name}. Use {date_format}.")
+
+
+def build_publication_date_category_query(category):
+    today = datetime.now().date()
+    if category == "today":
+        return Q(publication_date=today)
+    elif category == "two_days_ago":
+        date_range = today - timedelta(days=2)
+        return Q(publication_date__gte=date_range)
+    elif category == "one_week_ago":
+        date_range = today - timedelta(days=7)
+        return Q(publication_date__gte=date_range)
+    elif category == "two_weeks_ago":
+        date_range = today - timedelta(days=14)
+        return Q(publication_date__gte=date_range)
+    elif category == "one_month_ago":
+        date_range = today - timedelta(days=30)
+        return Q(publication_date__gte=date_range)
+    return Q()
+
+
 @api_view(['GET'])
 def get_jobs(request):
     job_names = request.GET.get('jobName', '').split(',')
@@ -15,68 +58,47 @@ def get_jobs(request):
     publication_date_category = request.GET.get('publicationDateCategory')
     locations = request.GET.get('jobLocation', '').split(',')
     companies = request.GET.get('company', '').split(',')
+    sources = request.GET.get('source', '').split(',')
     limit = request.GET.get('limit')
     page = request.GET.get('page')
 
     jobs = Job.objects.all()
-
     query = Q()
 
     if job_names:
-        job_name_query = Q()
-        for name in job_names:
-            name = name.replace('-', ' ')
-            job_name_query |= Q(title__icontains=name)
-        query &= job_name_query
+        query &= build_query(job_names, 'title')
 
     if publication_date:
-        query &= Q(publication_date=publication_date)
+        try:
+            query &= build_date_query('publication_date', publication_date)
+        except ValueError as e:
+            return JsonResponse({"error": str(e)}, status=400)
 
     if publication_date_after:
         try:
-            date_after = datetime.strptime(publication_date_after, '%Y-%m-%d')
-            query &= Q(publication_date__gte=date_after)
-        except ValueError:
-            return JsonResponse({"error": "Invalid format for publicationDateAfter. Use YYYY-MM-DD."}, status=400)
+            query &= build_date_range_query('publication_date', publication_date_after, 'gte')
+        except ValueError as e:
+            return JsonResponse({"error": str(e)}, status=400)
 
     if publication_date_before:
         try:
-            date_before = datetime.strptime(publication_date_before, '%Y-%m-%d')
-            query &= Q(publication_date__lte=date_before)
-        except ValueError:
-            return JsonResponse({"error": "Invalid format for publicationDateBefore. Use YYYY-MM-DD."}, status=400)
+            query &= build_date_range_query('publication_date', publication_date_before, 'lte')
+        except ValueError as e:
+            return JsonResponse({"error": str(e)}, status=400)
 
     if publication_date_category:
-        today = datetime.now().date()
-        if publication_date_category == "today":
-            query &= Q(publication_date=today)
-        elif publication_date_category == "two_days_ago":
-            date_range = today - timedelta(days=2)
-            query &= Q(publication_date__gte=date_range)
-        elif publication_date_category == "one_week_ago":
-            date_range = today - timedelta(days=7)
-            query &= Q(publication_date__gte=date_range)
-        elif publication_date_category == "two_weeks_ago":
-            date_range = today - timedelta(days=14)
-            query &= Q(publication_date__gte=date_range)
-        elif publication_date_category == "one_month_ago":
-            date_range = today - timedelta(days=30)
-            query &= Q(publication_date__gte=date_range)
+        query &= build_publication_date_category_query(publication_date_category)
 
     if locations:
-        location_query = Q()
-        for loc in locations:
-            location_query |= Q(location__icontains=loc)
-        query &= location_query
+        query &= build_query(locations, 'location')
 
     if companies:
-        company_query = Q()
-        for comp in companies:
-            company_query |= Q(company__icontains=comp)
-        query &= company_query
+        query &= build_query(companies, 'company')
+
+    if sources:
+        query &= build_query(sources, 'source')
 
     jobs = jobs.filter(query)
-
     total_jobs = jobs.count()
 
     if limit and limit != 'all':

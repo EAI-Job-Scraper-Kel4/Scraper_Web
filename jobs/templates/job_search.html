@@ -99,6 +99,27 @@
                     </select>
                 </div>
             </div>
+            <div class="row mb-3">
+                <div class="col-md-12">
+                    <label>Source:</label><br>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="linkedin" value="linkedin">
+                        <label class="form-check-label" for="linkedin">LinkedIn</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="jobstreet" value="jobstreet">
+                        <label class="form-check-label" for="jobstreet">JobStreet</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="kalibrr" value="kalibrr">
+                        <label class="form-check-label" for="kalibrr">Kalibrr</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="karir" value="karir">
+                        <label class="form-check-label" for="karir">Karir</label>
+                    </div>
+                </div>
+            </div>
             <button id="searchButton" type="button" class="btn btn-primary btn-block">Search</button>
         </div>
     </div>
@@ -256,6 +277,12 @@ function fetchJobs() {
         }
     });
 
+    const sourceFields = document.querySelectorAll(".form-check-input:checked");
+    let sources = [];
+    sourceFields.forEach(function(field) {
+        sources.push(encodeURIComponent(field.value.trim()));
+    });
+
     var publicationDate = document.getElementById("publicationDate").value.trim();
     var resultsPerPage = document.getElementById("resultsPerPage").value.trim();
 
@@ -271,6 +298,9 @@ function fetchJobs() {
     }
     if (jobLocations.length > 0) {
         url += "jobLocation=" + jobLocations.join(",") + "&";
+    }
+    if (sources.length > 0) {
+        url += "source=" + sources.join(",") + "&";
     }
     if (publicationDate !== "") {
         url += "publicationDateCategory=" + encodeURIComponent(publicationDate) + "&";
@@ -328,6 +358,7 @@ function formatDate(dateString) {
 </script>
 
 </body>
+
 
 
 </html>
