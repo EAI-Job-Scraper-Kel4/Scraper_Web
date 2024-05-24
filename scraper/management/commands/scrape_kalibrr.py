@@ -4,7 +4,6 @@ from scraper.models import Job
 from datetime import datetime, timedelta
 import json
 
-
 class Command(BaseCommand):
     help = 'Scrape job listings from Kalibrr'
 
@@ -79,7 +78,9 @@ class Command(BaseCommand):
                     location = job.get('google_location', {}).get('address_components', {}).get('city')
                     company = job.get('company_name')
                     job_id = job.get('id')
-                    link = f"https://www.kalibrr.com/job-board/te/{job_type}/{job_id}"
+                    company_code = job.get('company', {}).get('code')
+                    job_slug = job.get('slug')
+                    link = f"https://www.kalibrr.com/c/{company_code}/jobs/{job_id}/{job_slug}"
 
                     job_data = {
                         'title': title,
