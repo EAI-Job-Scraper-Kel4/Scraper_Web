@@ -3,60 +3,79 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from scraper.models import Job
 from datetime import datetime, timedelta
+from django.db.models import Q
 
 
 @api_view(['GET'])
 def get_jobs(request):
-    job_name = request.GET.get('jobName')
+    job_names = request.GET.get('jobName', '').split(',')
     publication_date = request.GET.get('publicationDate')
     publication_date_after = request.GET.get('publicationDateAfter')
     publication_date_before = request.GET.get('publicationDateBefore')
     publication_date_category = request.GET.get('publicationDateCategory')
-    location = request.GET.get('jobLocation')
-    company = request.GET.get('company')
+    locations = request.GET.get('jobLocation', '').split(',')
+    companies = request.GET.get('company', '').split(',')
     limit = request.GET.get('limit')
     page = request.GET.get('page')
 
     jobs = Job.objects.all()
 
-    if job_name:
-        job_name = job_name.replace('-', ' ')
-        jobs = jobs.filter(title__icontains=job_name)
+    query = Q()
+
+    if job_names:
+        job_name_query = Q()
+        for name in job_names:
+            name = name.replace('-', ' ')
+            job_name_query |= Q(title__icontains=name)
+        query &= job_name_query
+
     if publication_date:
-        jobs = jobs.filter(publication_date=publication_date)
+        query &= Q(publication_date=publication_date)
+
     if publication_date_after:
         try:
             date_after = datetime.strptime(publication_date_after, '%Y-%m-%d')
-            jobs = jobs.filter(publication_date__gte=date_after)
+            query &= Q(publication_date__gte=date_after)
         except ValueError:
             return JsonResponse({"error": "Invalid format for publicationDateAfter. Use YYYY-MM-DD."}, status=400)
+
     if publication_date_before:
         try:
             date_before = datetime.strptime(publication_date_before, '%Y-%m-%d')
-            jobs = jobs.filter(publication_date__lte=date_before)
+            query &= Q(publication_date__lte=date_before)
         except ValueError:
             return JsonResponse({"error": "Invalid format for publicationDateBefore. Use YYYY-MM-DD."}, status=400)
+
     if publication_date_category:
         today = datetime.now().date()
         if publication_date_category == "today":
-            jobs = jobs.filter(publication_date=today)
+            query &= Q(publication_date=today)
         elif publication_date_category == "two_days_ago":
             date_range = today - timedelta(days=2)
-            jobs = jobs.filter(publication_date__gte=date_range)
+            query &= Q(publication_date__gte=date_range)
         elif publication_date_category == "one_week_ago":
             date_range = today - timedelta(days=7)
-            jobs = jobs.filter(publication_date__gte=date_range)
+            query &= Q(publication_date__gte=date_range)
         elif publication_date_category == "two_weeks_ago":
             date_range = today - timedelta(days=14)
-            jobs = jobs.filter(publication_date__gte=date_range)
+            query &= Q(publication_date__gte=date_range)
         elif publication_date_category == "one_month_ago":
             date_range = today - timedelta(days=30)
-            jobs = jobs.filter(publication_date__gte=date_range)
+            query &= Q(publication_date__gte=date_range)
 
-    if location:
-        jobs = jobs.filter(location__icontains=location)
-    if company:
-        jobs = jobs.filter(company__icontains=company)
+    if locations:
+        location_query = Q()
+        for loc in locations:
+            location_query |= Q(location__icontains=loc)
+        query &= location_query
+
+    if companies:
+        company_query = Q()
+        for comp in companies:
+            company_query |= Q(company__icontains=comp)
+        query &= company_query
+
+    jobs = jobs.filter(query)
 
     total_jobs = jobs.count()
 

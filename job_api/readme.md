@@ -1,3 +1,5 @@
+Berikut adalah pembaruan untuk dokumentasi endpoint "Get Jobs":
+
 ### Endpoint: Get Jobs
 
 #### URL
@@ -8,9 +10,9 @@ GET /api/joblist/
 #### Parameters
 
 1. **jobName** (optional)
-   - **Description:** Nama pekerjaan yang ingin dicari. Anda bisa menggunakan kata kunci dengan tanda minus (-) sebagai pengganti spasi.
+   - **Description:** Nama pekerjaan yang ingin dicari. Anda bisa menggunakan beberapa kata kunci yang dipisahkan oleh koma.
    - **Type:** String
-   - **Example:** `data-analyst`
+   - **Example:** `data-analyst,cybersecurity`
 
 2. **publicationDate** (optional)
    - **Description:** Tanggal publikasi pekerjaan. Format yang diharapkan adalah `YYYY-MM-DD`.
@@ -33,18 +35,18 @@ GET /api/joblist/
    - **Example:** `today`
 
 6. **jobLocation** (optional)
-   - **Description:** Lokasi pekerjaan yang ingin dicari.
+   - **Description:** Lokasi pekerjaan yang ingin dicari. Anda bisa menggunakan beberapa lokasi yang dipisahkan oleh koma.
    - **Type:** String
-   - **Example:** `Jakarta`
+   - **Example:** `Jakarta,Bandung`
 
 7. **company** (optional)
-   - **Description:** Nama perusahaan yang ingin dicari.
+   - **Description:** Nama perusahaan yang ingin dicari. Anda bisa menggunakan beberapa nama perusahaan yang dipisahkan oleh koma.
    - **Type:** String
-   - **Example:** `Tech Solutions`
+   - **Example:** `Tech Solutions,Data Corp`
 
 8. **limit** (optional)
    - **Description:** Batas jumlah pekerjaan yang akan ditampilkan.
-   - **Type:** Integer
+   - **Type:** Integer atau String ('all')
    - **Example:** `10`
 
 9. **page** (optional)
@@ -54,7 +56,7 @@ GET /api/joblist/
 
 #### Example Request
 ```
-GET http://127.0.0.1:8000/api/joblist/?jobName=data-analyst&publicationDateAfter=2024-05-01&publicationDateBefore=2024-05-15&jobLocation=Jakarta&company=Tech%20Solutions&limit=10&page=1
+GET http://127.0.0.1:8000/api/joblist/?jobName=data-analyst,cybersecurity&publicationDateAfter=2024-05-01&publicationDateBefore=2024-05-15&jobLocation=Jakarta,Bandung&company=Tech%20Solutions,Data%20Corp&limit=10&page=1
 ```
 
 #### Response
@@ -108,6 +110,7 @@ GET http://127.0.0.1:8000/api/joblist/?jobName=data-analyst&publicationDateAfter
 - Parameter `jobName`, `jobLocation`, dan `company` menggunakan pencarian dengan metode `icontains`, sehingga hasil pencarian akan mencakup semua pekerjaan yang mengandung kata kunci yang diberikan.
 - Parameter `publicationDateAfter` dan `publicationDateBefore` memerlukan format tanggal `YYYY-MM-DD`.
 - Parameter `publicationDateCategory` memungkinkan pengguna untuk mencari pekerjaan berdasarkan kategori tanggal publikasi.
+- Parameter `limit` dapat digunakan dengan nilai 'all' untuk menampilkan semua hasil tanpa batas.
 
 ### How to Use
 
@@ -121,17 +124,37 @@ GET http://127.0.0.1:8000/api/joblist/?jobName=data-analyst&publicationDateAfter
    GET http://127.0.0.1:8000/api/joblist/?jobName=data-analyst
    ```
 
-3. **Menampilkan pekerjaan berdasarkan tanggal publikasi setelah tanggal tertentu:**
+3. **Menampilkan pekerjaan berdasarkan beberapa nama:**
+   ```
+   GET http://127.0.0.1:8000/api/joblist/?jobName=data-analyst,cybersecurity
+   ```
+
+4. **Menampilkan pekerjaan berdasarkan tanggal publikasi setelah tanggal tertentu:**
    ```
    GET http://127.0.0.1:8000/api/joblist/?publicationDateAfter=2024-05-01
    ```
 
-4. **Menampilkan pekerjaan berdasarkan lokasi:**
+5. **Menampilkan pekerjaan berdasarkan lokasi:**
    ```
    GET http://127.0.0.1:8000/api/joblist/?jobLocation=Jakarta
    ```
 
-5. **Menggunakan limit dan halaman untuk pagination:**
+6. **Menampilkan pekerjaan berdasarkan beberapa lokasi:**
+   ```
+   GET http://127.0.0.1:8000/api/joblist/?jobLocation=Jakarta,Bandung
+   ```
+
+7. **Menampilkan pekerjaan berdasarkan perusahaan:**
+   ```
+   GET http://127.0.0.1:8000/api/joblist/?company=Tech%20Solutions
+   ```
+
+8. **Menampilkan pekerjaan berdasarkan beberapa perusahaan:**
+   ```
+   GET http://127.0.0.1:8000/api/joblist/?company=Tech%20Solutions,Data%20Corp
+   ```
+
+9. **Menggunakan limit dan halaman untuk pagination:**
    ```
    GET http://127.0.0.1:8000/api/joblist/?limit=10&page=1
    ```

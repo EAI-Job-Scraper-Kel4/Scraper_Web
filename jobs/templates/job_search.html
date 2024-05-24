@@ -64,14 +64,29 @@
     <div class="card">
         <div class="card-body">
             <div class="search-params row">
-                <div class="col-md-3 mb-3">
-                    <input id="jobTitle" type="text" class="form-control" placeholder="Job Name">
+                <div class="col-md-3 mb-3" id="jobTitleContainer">
+                    <div class="input-group mb-3">
+                        <input name="jobName" type="text" class="form-control" placeholder="Job Name">
+                        <div class="input-group-append">
+                            <button id="addJobNameField" class="btn btn-outline-secondary" type="button">+</button>
+                        </div>
+                    </div>
                 </div>
-                <div class="col-md-3 mb-3">
-                    <input id="company" type="text" class="form-control" placeholder="Company">
+                <div class="col-md-3 mb-3" id="companyContainer">
+                    <div class="input-group mb-3">
+                        <input name="company" type="text" class="form-control" placeholder="Company">
+                        <div class="input-group-append">
+                            <button id="addCompanyField" class="btn btn-outline-secondary" type="button">+</button>
+                        </div>
+                    </div>
                 </div>
-                <div class="col-md-3 mb-3">
-                    <input id="jobLocation" type="text" class="form-control" placeholder="Job Location">
+                <div class="col-md-3 mb-3" id="jobLocationContainer">
+                    <div class="input-group mb-3">
+                        <input name="jobLocation" type="text" class="form-control" placeholder="Job Location">
+                        <div class="input-group-append">
+                            <button id="addJobLocationField" class="btn btn-outline-secondary" type="button">+</button>
+                        </div>
+                    </div>
                 </div>
                 <div class="col-md-3 mb-3">
                     <select id="publicationDate" class="form-control">
@@ -123,7 +138,6 @@ let totalPages = 1;
 document.addEventListener("DOMContentLoaded", function() {
     fetchJobs();  // Fetch and display all jobs on initial load
 
-    // Add event listeners for 'Enter' key press on input fields
     document.querySelectorAll('.form-control').forEach(function(element) {
         element.addEventListener("keypress", function(event) {
             if (event.key === "Enter") {
@@ -133,10 +147,54 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     });
 
-    // Add event listener for resultsPerPage change
     document.getElementById("resultsPerPage").addEventListener("change", function() {
         currentPage = 1;
         fetchJobs();
+    });
+
+    document.getElementById("addJobNameField").addEventListener("click", function() {
+        const container = document.getElementById("jobTitleContainer");
+        const div = document.createElement("div");
+        div.className = "input-group mb-3";
+        div.innerHTML = `
+            <input name="jobName" type="text" class="form-control" placeholder="Job Name">
+            <div class="input-group-append">
+                <button class="btn btn-outline-danger removeField" type="button">-</button>
+            </div>
+        `;
+        container.appendChild(div);
+    });
+
+    document.getElementById("addCompanyField").addEventListener("click", function() {
+        const container = document.getElementById("companyContainer");
+        const div = document.createElement("div");
+        div.className = "input-group mb-3";
+        div.innerHTML = `
+            <input name="company" type="text" class="form-control" placeholder="Company">
+            <div class="input-group-append">
+                <button class="btn btn-outline-danger removeField" type="button">-</button>
+            </div>
+        `;
+        container.appendChild(div);
+    });
+
+    document.getElementById("addJobLocationField").addEventListener("click", function() {
+        const container = document.getElementById("jobLocationContainer");
+        const div = document.createElement("div");
+        div.className = "input-group mb-3";
+        div.innerHTML = `
+            <input name="jobLocation" type="text" class="form-control" placeholder="Job Location">
+            <div class="input-group-append">
+                <button class="btn btn-outline-danger removeField" type="button">-</button>
+            </div>
+        `;
+        container.appendChild(div);
+    });
+
+    document.addEventListener("click", function(event) {
+        if (event.target.classList.contains("removeField")) {
+            event.target.closest(".input-group").remove();
+        }
     });
 });
 
@@ -174,37 +232,54 @@ document.getElementById("nextButtonBottom").addEventListener("click", function()
 });
 
 function fetchJobs() {
-    // Get search parameters from input fields
-    var title = document.getElementById("jobTitle").value.trim();
-    var company = document.getElementById("company").value.trim();
-    var jobLocation = document.getElementById("jobLocation").value.trim();
+    const jobNameFields = document.querySelectorAll("input[name='jobName']");
+    let jobNames = [];
+    jobNameFields.forEach(function(field) {
+        if (field.value.trim() !== "") {
+            jobNames.push(encodeURIComponent(field.value.trim()));
+        }
+    });
+
+    const companyFields = document.querySelectorAll("input[name='company']");
+    let companies = [];
+    companyFields.forEach(function(field) {
+        if (field.value.trim() !== "") {
+            companies.push(encodeURIComponent(field.value.trim()));
+        }
+    });
+
+    const jobLocationFields = document.querySelectorAll("input[name='jobLocation']");
+    let jobLocations = [];
+    jobLocationFields.forEach(function(field) {
+        if (field.value.trim() !== "") {
+            jobLocations.push(encodeURIComponent(field.value.trim()));
+        }
+    });
+
     var publicationDate = document.getElementById("publicationDate").value.trim();
     var resultsPerPage = document.getElementById("resultsPerPage").value.trim();
 
-    // Construct URL with search parameters
     var url = `/api/joblist/?page=${currentPage}&`;
     if (resultsPerPage !== "all") {
         url += `limit=${resultsPerPage}&`;
     }
-    if (title !== "") {
-        url += "jobName=" + encodeURIComponent(title) + "&";
+    if (jobNames.length > 0) {
+        url += "jobName=" + jobNames.join(",") + "&";
     }
-    if (company !== "") {
-        url += "company=" + encodeURIComponent(company) + "&";
+    if (companies.length > 0) {
+        url += "company=" + companies.join(",") + "&";
     }
-    if (jobLocation !== "") {
-        url += "jobLocation=" + encodeURIComponent(jobLocation) + "&";
+    if (jobLocations.length > 0) {
+        url += "jobLocation=" + jobLocations.join(",") + "&";
     }
     if (publicationDate !== "") {
         url += "publicationDateCategory=" + encodeURIComponent(publicationDate) + "&";
     }
 
-    // Remove trailing '&' if present
     if (url.slice(-1) === "&") {
         url = url.slice(0, -1);
     }
 
-    // Make AJAX request to API endpoint
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url, true);
     xhr.onreadystatechange = function() {
@@ -239,7 +314,6 @@ function displaySearchResults(results) {
         searchResultsElement.appendChild(container);
     });
 
-    // Disable/Enable pagination buttons
     document.getElementById("prevButtonTop").disabled = currentPage === 1;
     document.getElementById("nextButtonTop").disabled = currentPage === totalPages;
     document.getElementById("prevButtonBottom").disabled = currentPage === 1;
@@ -254,4 +328,6 @@ function formatDate(dateString) {
 </script>
 
 </body>
+
+
 </html>
